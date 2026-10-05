@@ -11,7 +11,7 @@ Phir is poori file ko ek cell me paste karke run karo.
 
 import gradio as gr
 import torch
-from transformers import pipeline
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 # ---------------------------------------------------------------
 # 1. Supported languages  (display name -> NLLB language code)
@@ -42,24 +42,25 @@ MODEL_NAME = "facebook/nllb-200-distilled-600M"
 # ---------------------------------------------------------------
 # 2. Load model once (GPU use hoga agar available ho)
 # ---------------------------------------------------------------
-device = 0 if torch.cuda.is_available() else -1
+device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Loading model... (pehli baar thoda time lagega)")
-_cache = {}
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME).to(device)
+model.eval()
 
 
-def get_translator(src_code, tgt_code):
-    """Same model reuse hota hai, sirf language codes change hote hain."""
-    key = (src_code, tgt_code)
-    if key not in _cache:
-        _cache[key] = pipeline(
-            "translation",
-            model=MODEL_NAME,
-            src_lang=src_code,
-            tgt_lang=tgt_code,
-            max_length=400,
-            device=device,
+def run_translation(text, src_code, tgt_code):
+    """Model ek hi hai; source/target language codes se direction decide hoti hai."""
+    tokenizer.src_lang = src_code
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=400).to(device)
+    with torch.no_grad():
+        generated = model.generate(
+            **inputs,
+            forced_bos_token_id=tokenizer.convert_tokens_to_ids(tgt_code),
+            max_new_tokens=400,
+            num_beams=4,
         )
-    return _cache[key]
+    return tokenizer.batch_decode(generated, skip_special_tokens=True)[0]
 
 
 # ---------------------------------------------------------------
@@ -71,9 +72,7 @@ def translate(text, source_lang, target_lang):
     if source_lang == target_lang:
         return text  # same language, kuch karna nahi
     try:
-        translator = get_translator(LANGUAGES[source_lang], LANGUAGES[target_lang])
-        result = translator(text.strip())
-        return result[0]["translation_text"]
+        return run_translation(text.strip(), LANGUAGES[source_lang], LANGUAGES[target_lang])
     except Exception as e:
         return f"Error: {e}"
 
@@ -114,3 +113,4 @@ with gr.Blocks(title="AI Text Translator") as demo:
 
 if __name__ == "__main__":
     demo.launch(share=True)  # share=True se Colab me public link milta hai
+
