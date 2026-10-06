@@ -8,7 +8,7 @@ Google Colab me pehle ye cell chalao:
     !pip install -q transformers sentencepiece gradio torch
 Phir is poori file ko ek cell me paste karke run karo.
 """
-
+import os
 import gradio as gr
 import torch
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -110,7 +110,9 @@ with gr.Blocks(title="AI Text Translator") as demo:
         ],
         inputs=[inp, src_dd, tgt_dd],
     )
-
-if __name__ == "__main__":
-    demo.launch(share=True)  # share=True se Colab me public link milta hai
+if _name_ == "_main_":
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=int(os.environ.get("PORT", 10000))
+    )
 
