@@ -1,4 +1,2 @@
 gradio
-torch
-transformers
-sentencepiece
+deep-translator
