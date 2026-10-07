@@ -135,7 +135,7 @@ with gr.Blocks(title="AI Text Translator") as demo:
 # ---------------------------------------------------------------
 # Start server
 # ---------------------------------------------------------------
-if _name_ == "_main_":
+if __name__ == "__main__":
 
     demo.launch(
         server_name="0.0.0.0",
