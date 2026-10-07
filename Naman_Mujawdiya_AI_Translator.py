@@ -14,6 +14,7 @@ from functools import lru_cache
 
 import gradio as gr
 import requests
+import os
 
 # ---------------------------------------------------------------
 # 1. Languages (display name -> ISO code)
@@ -182,6 +183,10 @@ with gr.Blocks(title="AI Text Translator") as demo:
         ],
         inputs=[inp, src_dd, tgt_dd],
     )
-
 if __name__ == "__main__":
-    demo.launch()
+    port = int(os.environ.get("PORT", 10000))
+
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=port
+    )
